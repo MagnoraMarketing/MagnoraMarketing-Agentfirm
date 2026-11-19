@@ -5,7 +5,7 @@ import type { ToolConnectionOwnership } from "./types/tool-access.js";
 
 export const CONNECTABLE_APP_SLUGS = new Set([
   "anthropic", "openai", "openrouter", "xai", "google", "bedrock",
-  "responses-api", "messages-api", "chat-completions-api", "local",
+  "responses-api", "messages-api", "chat-completions-api", "local", "antigravity",
   "agentmail",
   "browser-use-cloud",
   "daytona",
@@ -59,6 +59,7 @@ export const CONNECTABLE_APP_DEFINITIONS = APP_DEFINITIONS.filter((app) =>
  * is pulled from Browse or reserved for a future first-party experience.
  */
 export const APP_STORE_HIDDEN_SLUGS = new Set([
+  "antigravity",
   "beehiiv",
   "brex",
   "candid",
