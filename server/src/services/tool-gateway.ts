@@ -5990,6 +5990,7 @@ export function createToolGatewayService(
         resolve();
       });
     });
+    child.stdin.on("error", () => {});
     const request = (method: string, params: Record<string, unknown>) => {
       const id = nextId;
       nextId += 1;
