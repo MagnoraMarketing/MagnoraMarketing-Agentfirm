@@ -84,6 +84,7 @@
               "deploy/tailscale-private-access",
               "deploy/docker",
               "deploy/render",
+              "deploy/vps",
               "deploy/deployment-modes",
               "deploy/database",
               "deploy/secrets",
