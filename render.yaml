@@ -1,0 +1,49 @@
+# Render Blueprint for a hosted Paperclip instance backed by Supabase Postgres.
+# Guide: docs/deploy/render.md
+#
+# Render builds the repo Dockerfile (server + UI + agent CLIs) and runs it as a
+# long-lived web service. Data that must survive restarts (uploads, agent
+# workspaces) lives on the persistent disk mounted at /paperclip; all relational
+# data lives in Supabase via DATABASE_URL.
+services:
+  - type: web
+    name: magnora-agentfirm
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Agents run CLI processes (Claude Code, Codex) inside this container;
+    # 512 MB instances run out of memory. Standard = 2 GB RAM.
+    plan: standard
+    region: frankfurt
+    healthCheckPath: /api/health
+    disk:
+      name: paperclip-data
+      mountPath: /paperclip
+      sizeGB: 10
+    envVars:
+      - key: PORT
+        value: "3100"
+      # Supabase -> Connect -> Direct -> "Session pooler" URI (port 5432),
+      # with [YOUR-PASSWORD] replaced.
+      - key: DATABASE_URL
+        sync: false
+      - key: PAPERCLIP_DEPLOYMENT_MODE
+        value: authenticated
+      - key: PAPERCLIP_DEPLOYMENT_EXPOSURE
+        value: private
+      # The service URL Render shows after the first deploy,
+      # e.g. https://magnora-agentfirm.onrender.com
+      - key: PAPERCLIP_PUBLIC_URL
+        sync: false
+      - key: PAPERCLIP_AUTH_RATE_LIMIT_ENABLED
+        value: "true"
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      # Encrypts stored company secrets. Never rotate it after first boot.
+      - key: PAPERCLIP_SECRETS_MASTER_KEY
+        generateValue: true
+      - key: PAPERCLIP_TOOL_ACTION_SIGNING_SECRET
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
