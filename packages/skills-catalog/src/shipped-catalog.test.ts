@@ -21,6 +21,7 @@ const EXPECTED_OPTIONAL_KEYS = [
   "paperclipai/optional/browser/agent-browser",
   "paperclipai/optional/content/release-announcement",
   "paperclipai/optional/content/simplified-english",
+  "paperclipai/optional/content/wan-video",
   "paperclipai/optional/finance/ramp",
   "paperclipai/optional/product/design-critique",
   "paperclipai/optional/research/last30days",

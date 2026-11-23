@@ -1,0 +1,39 @@
+# Single-server Paperclip deployment: the app container plus Caddy for HTTPS.
+# The database is external (Supabase) via DATABASE_URL in .env.
+# Set up by install.sh; see docs/deploy/vps.md.
+services:
+  paperclip:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PAPERCLIP_DEPLOYMENT_MODE: authenticated
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: private
+      PAPERCLIP_AUTH_RATE_LIMIT_ENABLED: "true"
+    volumes:
+      - paperclip-data:/paperclip
+    expose:
+      - "3100"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - paperclip
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN must be set in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  paperclip-data:
+  caddy-data:
+  caddy-config:
