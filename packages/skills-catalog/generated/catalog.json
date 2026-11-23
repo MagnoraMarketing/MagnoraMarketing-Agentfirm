@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "packageName": "@paperclipai/skills-catalog",
   "packageVersion": "0.3.1",
-  "generatedAt": "2026-07-28T22:35:25.645Z",
+  "generatedAt": "2026-11-23T18:39:32.958Z",
   "skills": [
     {
       "id": "paperclipai:bundled:docs:doc-maintenance",
@@ -520,6 +520,41 @@
         }
       ],
       "contentHash": "sha256:642321f40d51e0125df05c6fbace49aeb07ec30392058756909c259c9c5eac6a"
+    },
+    {
+      "id": "paperclipai:optional:content:wan-video",
+      "key": "paperclipai/optional/content/wan-video",
+      "kind": "optional",
+      "category": "content",
+      "slug": "wan-video",
+      "name": "wan-video",
+      "description": "Generate short marketing videos (up to 5 seconds, text-to-video or image-to-video) with a self-hosted Wan 2.2 engine running in Google Colab, then attach the MP4 to the issue.",
+      "path": "catalog/optional/content/wan-video",
+      "entrypoint": "SKILL.md",
+      "trustLevel": "markdown_only",
+      "compatibility": "compatible",
+      "defaultInstall": false,
+      "recommendedForRoles": [
+        "designer",
+        "marketer",
+        "writer"
+      ],
+      "requires": [],
+      "tags": [
+        "video",
+        "wan",
+        "generation",
+        "marketing"
+      ],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "kind": "skill",
+          "sizeBytes": 4011,
+          "sha256": "2f6cb762d710bbb1d849ed409693f80dffa6c8ce7c0599c0be0867075b9cb2a4"
+        }
+      ],
+      "contentHash": "sha256:a30176b135df6436535e287250640ed79b60cb7bb269398f7677dc7a04f9a901"
     },
     {
       "id": "paperclipai:optional:finance:ramp",
