@@ -1,0 +1,36 @@
+{
+  "name": "@paperclipai/plugin-magnora",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Magnora Marketing operations plugin: Gmail, social channels and affiliate providers with approval gates.",
+  "files": ["dist", "migrations", "README.md"],
+  "scripts": {
+    "prebuild": "pnpm --filter @paperclipai/plugin-sdk ensure-build-deps",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run --config ./vitest.config.ts",
+    "typecheck": "pnpm --filter @paperclipai/plugin-sdk ensure-build-deps && tsc --noEmit"
+  },
+  "paperclipPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js",
+    "ui": "./dist/ui/"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@paperclipai/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

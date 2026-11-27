@@ -1,0 +1,138 @@
+name: Magnora CI & Deploy
+
+# GitHub is the source of truth:
+#   push to main/master -> CI (typecheck, tests, build) -> deploy to the cloud VM -> health check
+# If CI fails, the deploy job never runs and production keeps the previous version.
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    paths:
+      - "packages/plugins/plugin-magnora/**"
+      - "companies/magnora-marketing/**"
+      - "deploy/magnora/**"
+      - "scripts/audit-integrations.mjs"
+      - ".github/workflows/magnora-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: magnora-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI (typecheck, test, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Dockerfile deps stage
+        run: node ./scripts/check-docker-deps-stage.mjs
+
+      - name: Build plugin SDK
+        run: pnpm --filter @paperclipai/plugin-sdk build
+
+      - name: Magnora plugin – typecheck
+        run: pnpm --filter @paperclipai/plugin-magnora typecheck
+
+      - name: Magnora plugin – tests
+        run: pnpm --filter @paperclipai/plugin-magnora test
+
+      - name: Magnora plugin – build
+        run: pnpm --filter @paperclipai/plugin-magnora build
+
+      - name: Integration audit script – tests
+        run: node --test scripts/audit-integrations.test.mjs
+
+      - name: Server – typecheck
+        run: pnpm --filter @paperclipai/server typecheck
+
+      - name: Server – build
+        run: pnpm --filter @paperclipai/server build
+
+      - name: UI – build
+        run: pnpm --filter @paperclipai/ui build
+
+      - name: Validate deploy scripts
+        run: |
+          bash -n deploy/magnora/deploy.sh
+          bash -n deploy/magnora/bootstrap-server.sh
+          bash -n deploy/magnora/backup-now.sh
+
+  deploy:
+    name: Deploy to production
+    needs: ci
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment:
+      name: production
+      url: https://${{ vars.PAPERCLIP_DOMAIN }}
+    steps:
+      - name: Check deploy configuration
+        id: config
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ] || [ -z "$DEPLOY_KNOWN_HOSTS" ]; then
+            echo "::warning::Deploy skipped: set DEPLOY_HOST, DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS in the 'production' environment (see deploy/magnora/README.md)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER || 'deploy' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/magnora' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" "$DEPLOY_PATH/deploy/magnora/deploy.sh $SHA"
+
+      - name: Verify public health endpoint
+        if: steps.config.outputs.enabled == 'true' && vars.PAPERCLIP_DOMAIN != ''
+        env:
+          DOMAIN: ${{ vars.PAPERCLIP_DOMAIN }}
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS "https://$DOMAIN/api/health" | tee /tmp/health.json | grep -q '"status":"ok"'; then
+              echo "Production is healthy"; exit 0
+            fi
+            sleep 6
+          done
+          echo "Health check failed" >&2
+          exit 1

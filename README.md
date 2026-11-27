@@ -1,3 +1,9 @@
+> **Magnora Marketing AI Company** – denne fork kører som privat, cloud-hostet AI-virksomhed.
+> Start her: [doc/magnora/AUDIT.md](doc/magnora/AUDIT.md) (audit & arkitektur) ·
+> [deploy/magnora/README.md](deploy/magnora/README.md) (cloud deployment med Supabase) ·
+> [companies/magnora-marketing](companies/magnora-marketing) (agenter) ·
+> [packages/plugins/plugin-magnora](packages/plugins/plugin-magnora) (Gmail, social, affiliate).
+
 <p align="center">
   <img src="doc/assets/banner.jpg" alt="Paperclip is the app people use to manage AI agents for work." width="720" />
 </p>

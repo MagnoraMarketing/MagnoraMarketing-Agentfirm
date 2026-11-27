@@ -1,0 +1,110 @@
+schema: paperclip/v1
+schemaVersion: 6
+# Budgets are monthly, in cents of the instance billing currency (configurable per agent in the UI).
+# Agents run with the Claude Code adapter that ships in the Docker image; the model is chosen per agent in the UI.
+agents:
+  ceo:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 10000
+    capabilities: Prioriterer, delegerer, følger op, kontrollerer resultater og laver den daglige rapport.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  marketing:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 5000
+    capabilities: Kampagner, content, SEO og marketinganalyse; sender briefs til Social Media.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  social-media:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 3000
+    capabilities: Skriver og tilpasser opslag til Facebook, Instagram, LinkedIn og X; indsender til godkendelse.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  email:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 3000
+    capabilities: Læser, klassificerer og opsummerer Gmail; skriver drafts; send kun efter godkendelse.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  affiliate:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 2000
+    capabilities: Læser affiliate-statistik og rapporterer til CEO. Ingen skriveadgang til affiliate-konti.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  sales:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 3000
+    capabilities: Kvalificerer leads, skriver tilbud og opfølgning (afsendelse via Email + godkendelse).
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  research:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 3000
+    capabilities: Markeds-, konkurrent-, SEO- og trendresearch.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+  operations:
+    adapter:
+      type: claude_local
+    budgetMonthlyCents: 2000
+    capabilities: Overvåger integrationer, fejl og budgetter; dokumenterer processer.
+    permissions:
+      canCreateAgents: false
+      canCreateSkills: false
+routines:
+  ceo-daily-report:
+    concurrencyPolicy: skip_if_active
+    catchUpPolicy: skip_missed
+    triggers:
+      - kind: schedule
+        label: Hver morgen 08:00
+        cronExpression: "0 8 * * *"
+        timezone: Europe/Copenhagen
+  affiliate-daily-report:
+    concurrencyPolicy: skip_if_active
+    catchUpPolicy: skip_missed
+    triggers:
+      - kind: schedule
+        label: Hver morgen 08:15
+        cronExpression: "15 8 * * *"
+        timezone: Europe/Copenhagen
+  email-triage:
+    concurrencyPolicy: skip_if_active
+    catchUpPolicy: skip_missed
+    triggers:
+      - kind: schedule
+        label: Hver time
+        cronExpression: "0 * * * *"
+        timezone: Europe/Copenhagen
+  social-content-daily:
+    concurrencyPolicy: skip_if_active
+    catchUpPolicy: skip_missed
+    triggers:
+      - kind: schedule
+        label: Hver dag 09:00
+        cronExpression: "0 9 * * *"
+        timezone: Europe/Copenhagen
+  research-daily:
+    concurrencyPolicy: skip_if_active
+    catchUpPolicy: skip_missed
+    triggers:
+      - kind: schedule
+        label: Hver dag 10:00
+        cronExpression: "0 10 * * *"
+        timezone: Europe/Copenhagen

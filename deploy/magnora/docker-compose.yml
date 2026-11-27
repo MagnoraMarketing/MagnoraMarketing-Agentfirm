@@ -1,0 +1,78 @@
+# Magnora production stack.
+#   Paperclip server (UI + API + agents + scheduler) in Docker on a cloud VM
+#   Database: Supabase managed PostgreSQL (project lwhyzhqwqxgryofdldzh)
+#   HTTPS: Caddy with automatic Let's Encrypt certificates
+#
+# Usage on the server (see deploy/magnora/README.md):
+#   docker compose --env-file .env up -d --build
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: production
+      args:
+        PAPERCLIP_BUILD_COMMIT: ${PAPERCLIP_BUILD_COMMIT:-}
+    image: magnora-paperclip:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3100"
+      SERVE_UI: "true"
+      NODE_ENV: production
+      PAPERCLIP_HOME: /paperclip
+      PAPERCLIP_DEPLOYMENT_MODE: authenticated
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: public
+      PAPERCLIP_PUBLIC_URL: https://${PAPERCLIP_DOMAIN:?PAPERCLIP_DOMAIN must be set in .env}
+      PAPERCLIP_ALLOWED_HOSTNAMES: ${PAPERCLIP_DOMAIN}
+      # Only Caddy (same Docker network) sits in front of the server.
+      TRUST_PROXY: uniquelocal
+      PAPERCLIP_DB_BACKUP_ENABLED: "true"
+      PAPERCLIP_DB_BACKUP_DIR: /paperclip/backups
+      PAPERCLIP_DB_BACKUP_INTERVAL_MINUTES: "1440"
+      PAPERCLIP_DB_BACKUP_RETENTION_DAYS: "14"
+      PAPERCLIP_TELEMETRY_DISABLED: "1"
+    volumes:
+      # Agent workspaces, uploaded assets, local backups, CLI state.
+      - paperclip-data:/paperclip
+    expose:
+      - "3100"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3100/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      PAPERCLIP_DOMAIN: ${PAPERCLIP_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL must be set in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  paperclip-data:
+  caddy-data:
+  caddy-config:

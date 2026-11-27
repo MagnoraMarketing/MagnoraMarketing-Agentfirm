@@ -1,0 +1,20 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$PAPERCLIP_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+
+	reverse_proxy server:3100 {
+		# Long-lived streams (live run logs, SSE).
+		flush_interval -1
+	}
+}
